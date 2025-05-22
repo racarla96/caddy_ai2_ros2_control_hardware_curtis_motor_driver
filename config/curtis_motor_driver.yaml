@@ -1,0 +1,37 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 50  # Hz
+
+    curtis_motor_velocity_controller:
+      type: velocity_controllers/JointGroupVelocityController
+
+    curtis_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+curtis_motor_velocity_controller:
+  ros__parameters:
+    joints:
+      - curtis_motor
+    interface_name: velocity
+    command_interfaces:
+      - throttle
+    state_interfaces:
+      - velocity
+      - current_rms
+      - battery_current
+      - voltage
+      - bdi_percentage
+      - motor_rpm
+      - temperature
+      - motor_temperature
+
+curtis_motor:
+  ros__parameters:
+    can_interface: "can0"
+    watchdog_command: true
+    mode: 0
+    wheel_diameter: 0.5
+    max_rpm: 4300.0
+    gear_ratio: 16.0
+    max_v_auto: 2.0
+    motor_direction: -1
