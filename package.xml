@@ -4,15 +4,19 @@
   <name>caddy_ai2_ros2_control_hardware_curtis_motor_driver</name>
   <version>0.1.0</version>
   <description>ROS2 Control hardware interface for Curtis motor driver</description>
-  <maintainer email="your@email.com">Your Name</maintainer>
+  <maintainer email="racarla1@inf.upv.es">Rafael Carbonell Lázaro</maintainer>
   <license>GPL-3.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>ros2_control_cmake</build_depend>
 
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+
+
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

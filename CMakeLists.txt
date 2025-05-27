@@ -17,47 +17,29 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 
-# Verificar si existe el directorio de libsockcanpp
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/libsockcanpp-1.5.0")
-    message(STATUS "Building sockcanpp from source")
-
-    # Desactivar -Werror para libsockcanpp
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=ignored-qualifiers")
-
-    # Añadir el subdirectorio directamente
-    add_subdirectory(lib/libsockcanpp-1.5.0 ${CMAKE_CURRENT_BINARY_DIR}/libsockcanpp-1.5.0)
-    
-    # Definir variables para incluir y enlazar
-    set(SOCKCANPP_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/lib/libsockcanpp-1.5.0/include")
-    set(SOCKCANPP_LIBRARIES sockcanpp)
-else()
-    message(FATAL_ERROR "libsockcanpp directory not found at ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsockcanpp-1.5.0")
-endif()
-
 # Compile options
 add_compile_options(-DCADDY_AI2_ROS2_CONTROL_HARDWARE_CURTIS_MOTOR_DRIVER_BUILDING_DLL)
 
 # Include directories
-include_directories(include)
+include_directories(hardware/include/caddy_ai2_ros2_control_hardware_curtis_motor_driver)
 
 # Create the hardware plugin library
 add_library(
   ${PROJECT_NAME}
   SHARED
-  src/curtis_motor_driver.cpp
-  src/can_interface.cpp
+  hardware/src/socket_can_interface.cpp
+  hardware/src/curtis_motor_driver.cpp
+  hardware/src/curtis_motor_hardware_interface.cpp
 )
 
 target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
-  ${SOCKCANPP_INCLUDE_DIRS}
 )
 
 target_link_libraries(
   ${PROJECT_NAME}
-  ${SOCKCANPP_LIBRARIES}
 )
 
 ament_target_dependencies(
@@ -71,19 +53,19 @@ ament_target_dependencies(
 # Export hardware plugin
 pluginlib_export_plugin_description_file(hardware_interface hardware_interface_plugin.xml)
 
-# Install
-install(
-  TARGETS ${PROJECT_NAME}
-  DESTINATION lib
-)
 
 install(
-  DIRECTORY include/
+  DIRECTORY hardware/include/
   DESTINATION include
 )
 
 install(
-  DIRECTORY launch config
+  DIRECTORY description/ros2_control description/urdf
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY bringup/launch bringup/config
   DESTINATION share/${PROJECT_NAME}
 )
 
