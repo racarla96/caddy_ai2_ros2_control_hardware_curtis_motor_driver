@@ -3,28 +3,7 @@
 #include <iostream>
 
 CurtisMotorDriver::CurtisMotorDriver(bool verbose)
-    : verbose_(verbose),
-    current_rms_(0.0f),
-    battery_current_(0.0f),
-    keyswitch_voltage_(0.0f),
-    bdi_percentage_(0.0f),
-    motor_rpm_(0.0f),
-    speed_(0.0f),
-    controller_temp_(0.0f),
-    motor_temp_(0.0f),
-    interlock_(false),
-    mode_auto_(false),
-    mode_manual_(false),
-    on_fault_(false),
-    fault_code_(0),
-    fault_description_(""),
-    desired_throttle_(0.0f),
-    last_update_0x226_frame_(std::chrono::system_clock::now()),
-    last_update_0x227_frame_(std::chrono::system_clock::now()),
-    last_update_0x327_frame_(std::chrono::system_clock::now()),
-    last_update_0x1A6_frame_(std::chrono::system_clock::now()),
-    last_update_0x2A6_frame_(std::chrono::system_clock::now()),
-    last_update_0x726_frame_(std::chrono::system_clock::now())
+:   verbose_(verbose)
 {
     if (verbose_) {
         std::cout << "CurtisMotorDriver initialized with verbose mode enabled." << std::endl;
@@ -49,7 +28,8 @@ std::vector<bool> CurtisMotorDriver::process_frames(const std::vector<struct can
                 processed = process_0x227_frame(frame);
                 break;
             case FRAME_327:
-                processed = process_0x327_frame(frame);
+                // processed = process_0x327_frame(frame); // Sin uso
+                processed = true; // For now, just mark as processed
                 break;
             case FRAME_1A6:
                 processed = process_0x1A6_frame(frame);
@@ -58,7 +38,8 @@ std::vector<bool> CurtisMotorDriver::process_frames(const std::vector<struct can
                 processed = process_0x2A6_frame(frame);
                 break;
             case FRAME_726:
-                processed = process_0x726_frame(frame);
+                // processed = process_0x726_frame(frame); // Sin uso
+                processed = true; // For now, just mark as processed
                 break;
             default:
                 if (verbose_) {
@@ -114,7 +95,7 @@ bool CurtisMotorDriver::process_0x227_frame(const struct can_frame& frame) {
         fault_code_ = frame.data[1];
 
         // Update the timestamp
-        last_update_0x227_frame_ = std::chrono::system_clock::now();
+        last_update_0x227_frame_++;
 
         if (verbose_) {
             std::cout << "CAN_Master_Commands: "
@@ -144,6 +125,7 @@ bool CurtisMotorDriver::process_0x227_frame(const struct can_frame& frame) {
  * @param frame The CAN frame to process.
  * @return true if the frame was successfully processed, false otherwise.
  */
+/*
 bool CurtisMotorDriver::process_0x327_frame(const struct can_frame& frame) {
     if (verbose_) {
         std::cout << "Processing frame with ID 0x327." << std::endl;
@@ -159,12 +141,13 @@ bool CurtisMotorDriver::process_0x327_frame(const struct can_frame& frame) {
         }
 
         // Update the timestamp
-        last_update_0x327_frame_ = std::chrono::system_clock::now();
+        last_update_0x327_frame_++;
 
         return true;
     }
     return false;
 }
+*/
 
 /**
  * @brief Processes a CAN frame with ID 0x1A6.
@@ -206,7 +189,7 @@ bool CurtisMotorDriver::process_0x1A6_frame(const struct can_frame& frame) {
         bdi_percentage_ = static_cast<float>(bdi_percentage_raw);
 
         // Update the timestamp
-        last_update_0x1A6_frame_ = std::chrono::system_clock::now();
+        last_update_0x1A6_frame_++;
 
         if (verbose_) {
             std::cout << "current_rms_: " << current_rms_ 
@@ -244,25 +227,24 @@ bool CurtisMotorDriver::process_0x2A6_frame(const struct can_frame& frame) {
     }
     if (frame.len == 8) {
         // Extract Motor RPM
+        // #TODO: Check the sign of the RPM value, maybe we need to change the sign.
         int16_t motor_rpm_raw = (frame.data[1] << 8) | frame.data[0];
-		// #FIXME
-        int motor_direction = (motor_rpm_raw >= 0) ? 1 : -1; // Determine motor direction // Determinado por el encoder
-        motor_rpm_ = motor_direction * static_cast<float>(std::abs(motor_rpm_raw));
+        motor_rpm_ =  static_cast<float>(std::abs(motor_rpm_raw));
 
         // Extract Vehicle Speed
         int16_t speed_raw = (frame.data[3] << 8) | frame.data[2];
-        speed_ = motor_direction * (static_cast<float>(speed_raw) / CURTIS_SPEED_DIVISOR) * KMH_TO_MPS;
+        speed_ = (static_cast<float>(speed_raw) / CURTIS_SPEED_DIVISOR) * KMH_TO_MPS;
 
         // Extract Master Controller Temperature
         int16_t controller_temp_raw = (frame.data[5] << 8) | frame.data[4];
-        controller_temp_ = static_cast<float>(controller_temp_raw) / 10.0f;
+        controller_temp_ = static_cast<float>(controller_temp_raw) * 0.1f;
 
         // Extract Master Motor Temperature
         int16_t motor_temp_raw = (frame.data[7] << 8) | frame.data[6];
-        motor_temp_ = static_cast<float>(motor_temp_raw) / 10.0f;
+        motor_temp_ = static_cast<float>(motor_temp_raw) * 0.1f;
 
         // Update the timestamp
-        last_update_0x2A6_frame_ = std::chrono::system_clock::now();
+        last_update_0x2A6_frame_++;
 
         if (verbose_) {
             std::cout << "motor_rpm_: " << motor_rpm_
@@ -288,6 +270,7 @@ bool CurtisMotorDriver::process_0x2A6_frame(const struct can_frame& frame) {
  * @param frame The CAN frame to process.
  * @return true if the frame was successfully processed, false otherwise.
  */
+/*
 bool CurtisMotorDriver::process_0x726_frame(const struct can_frame& frame) {
     if (verbose_) {
         std::cout << "Processing frame with ID 0x726." << std::endl;
@@ -301,14 +284,15 @@ bool CurtisMotorDriver::process_0x726_frame(const struct can_frame& frame) {
         }
 
         // Update the timestamp
-        last_update_0x726_frame_ = std::chrono::system_clock::now();
+        last_update_0x726_frame_++;
 
         return true;
     }
     return false;
 }
+*/
 
-bool CurtisMotorDriver::send_throttle_command(struct can_frame* frame, int throttle_value, bool reset) {
+bool CurtisMotorDriver::create_0x226_frame(struct can_frame* frame, int throttle_value, bool reset) {
     if (verbose_) {
         std::cout << "Sending throttle command. Throttle value: " << throttle_value << ", Reset: " << reset << std::endl;
     }
@@ -319,31 +303,21 @@ bool CurtisMotorDriver::send_throttle_command(struct can_frame* frame, int throt
     std::memset(frame, 0, sizeof(struct can_frame));
     frame->can_id = FRAME_226;
     frame->can_dlc = 8;
-    
+
+    for (int i = 0; i < 8; i++) {
+        frame->data[i] = 0;
+    }
+ 
     if (reset) {
-        for (int i = 0; i < 8; i++) {
-            frame->data[i] = 0;
-        }
+        frame->data[2] = RESET_CODE & 0xFF;
+        frame->data[3] = (RESET_CODE >> 8) & 0xFF;
     } else {
-        if (throttle_value < -100) {
-            throttle_value = -100;
-        } else if (throttle_value > 100) {
-            throttle_value = 100;
-        }
-        
+
         frame->data[0] = throttle_value & 0xFF;
         frame->data[1] = (throttle_value >> 8) & 0xFF;
-        
-        if (reset) {
-            frame->data[2] = RESET_CODE & 0xFF;
-            frame->data[3] = (RESET_CODE >> 8) & 0xFF;
-        } else {
-            frame->data[2] = 0;
-            frame->data[3] = 0;
-        }
     }
 
-    last_update_0x226_frame_ = std::chrono::system_clock::now();
+    last_update_0x226_frame_++;
     
     if (verbose_) {
         std::cout << "Throttle command frame prepared." << std::endl;
@@ -351,7 +325,7 @@ bool CurtisMotorDriver::send_throttle_command(struct can_frame* frame, int throt
     return true;
 }
 
-std::string CurtisMotorDriver::getFaultString(int fault_code) {
+std::string CurtisMotorDriver::getFaultString(uint8_t fault_code) {
 
 	switch(fault_code){
 		case 38:

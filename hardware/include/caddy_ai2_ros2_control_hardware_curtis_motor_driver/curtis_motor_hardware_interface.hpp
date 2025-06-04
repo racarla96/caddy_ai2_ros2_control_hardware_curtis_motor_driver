@@ -22,6 +22,10 @@
 
 #define MAX_RPM 4300.0
 #define GEAR_RATIO 16.0
+#define WHEEL_DIAMETER_M 0.5 // m
+#define APROX_THROTTLE_TO_MPS ((M_PI * WHEEL_DIAMETER_M) * ( (MAX_RPM / 60.0) / GEAR_RATIO)) / SHRT_MAX // m/s per throttle value
+#define RECOVER_TIME 5 // secs
+#define WATCHDOG_TIMEOUT 0.2 // secs
 
 namespace curtis_motor_hardware
 {
@@ -40,6 +44,8 @@ public:
 
   hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
+  hardware_interface::CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
+
   hardware_interface::return_type read(const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   hardware_interface::return_type write(const rclcpp::Time & time, const rclcpp::Duration & period) override;
@@ -55,6 +61,9 @@ private:
   int control_rate_write_counts_; // Number of write operations per control loop iteration
   int control_rate_write_counter_; // Counter for control rate (update_rate_hz_ / control_rate_hz_)
   
+  struct can_frame throttle_frame_; // Frame for sending throttle commands
+  std::vector<struct can_frame> frames;
+
   // Hardware
   std::unique_ptr<SocketCANInterface> can_interface_;
   std::unique_ptr<CurtisMotorDriver> curtis_driver_;

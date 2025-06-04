@@ -5,11 +5,12 @@
 
     <ros2_control name="curtis_motor" type="actuator">
         <hardware>
-            <plugin>caddy_ai2_ros2_control_hardware_curtis_motor_driver/CurtisMotorDriver</plugin>
+            <plugin>caddy_ai2_ros2_control_hardware_curtis_motor_driver/CurtisMotorHardwareInterface</plugin>
+            <param name="can_interface" value="can_motor_drv"/>
             <param name="update_rate" value="${update_rate}"/>
         </hardware>
-        <joint name="curtis_motor">
-            <command_interface name="throttle"/>
+        <joint name="curtis_motor_joint">
+            <command_interface name="velocity"/>
             <state_interface name="velocity"/>
             <state_interface name="current_rms"/>
             <state_interface name="battery_current"/>
