@@ -1,4 +1,4 @@
-#include "curtis_motor_hardware_interface.hpp"
+#include "caddy_ai2_ros2_control_hardware_curtis_motor_driver/curtis_motor_hardware_interface.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -10,7 +10,7 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace curtis_motor_hardware
+namespace caddy_ai2_ros2_control_hardware_curtis_motor_driver
 {
 
 hardware_interface::CallbackReturn CurtisMotorHardwareInterface::on_init(
@@ -21,54 +21,66 @@ hardware_interface::CallbackReturn CurtisMotorHardwareInterface::on_init(
     return hardware_interface::CallbackReturn::ERROR;
   }
 
-  can_interface_name_ = info_.hardware_parameters["can_interface"];
-  update_rate_hz_ = hardware_interface::stod(info_.hardware_parameters["update_rate"]);
+  // Verifica parámetros
+  try {
+    can_interface_name_ = info_.hardware_parameters.at("can_interface");
+    update_rate_hz_ = hardware_interface::stod(info_.hardware_parameters.at("update_rate"));
+  } catch (const std::exception &e) {
+    RCLCPP_FATAL(get_logger(), "Faltan parámetros 'can_interface' o 'update_rate' o no son válidos: %s", e.what());
+    return hardware_interface::CallbackReturn::ERROR;
+  }
 
-  RCLCPP_INFO(
-    get_logger(), "Initializing Curtis Motor Hardware Interface with CAN interface: %s",
-    can_interface_name_.c_str());
+  RCLCPP_INFO(get_logger(), "Initializing Curtis Motor Hardware Interface with CAN interface: %s", can_interface_name_.c_str());
+  RCLCPP_INFO(get_logger(), "Update rate: %.2f Hz", update_rate_hz_);
 
-  RCLCPP_INFO(
-    get_logger(), "Update rate: %.2f Hz", update_rate_hz_);
-    
+  // Estructura esperada de state_interfaces
+  const std::vector<std::string> expected_state_interfaces = {
+    "velocity",
+    "motor_rpm",
+    "current_rms",
+    "battery_current",
+    "battery_voltage",
+    "interlock",
+    "on_fault",
+    "mode_auto",
+    "mode_manual",
+    "fault_code",
+  };
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
-    // DiffBotSystem has exactly two states and one command interface on each joint
+    // 1. Verifica número y tipo de interfaces de comando
     if (joint.command_interfaces.size() != 1)
     {
-      RCLCPP_FATAL(
-        get_logger(), "Joint '%s' has %zu command interfaces found. 1 expected.",
-        joint.name.c_str(), joint.command_interfaces.size());
+      RCLCPP_FATAL(get_logger(), "Joint '%s' tiene %zu command interfaces. Se esperaba 1.", joint.name.c_str(), joint.command_interfaces.size());
       return hardware_interface::CallbackReturn::ERROR;
     }
-
     if (joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY)
     {
-      RCLCPP_FATAL(
-        get_logger(), "Joint '%s' have %s command interfaces found. '%s' expected.",
-        joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
-        hardware_interface::HW_IF_VELOCITY);
+      RCLCPP_FATAL(get_logger(), "Joint '%s' tiene '%s' como command interface. Se esperaba 'velocity'.", joint.name.c_str(), joint.command_interfaces[0].name.c_str());
       return hardware_interface::CallbackReturn::ERROR;
     }
 
-    if (joint.state_interfaces.size() != 2)
+    // 2. Verifica número y orden de state_interfaces
+    if (joint.state_interfaces.size() != expected_state_interfaces.size())
     {
-      RCLCPP_FATAL(
-        get_logger(), "Joint '%s' has %zu state interface. 2 expected.", joint.name.c_str(),
-        joint.state_interfaces.size());
+      RCLCPP_FATAL(get_logger(), "Joint '%s' tiene %zu state interfaces. Se esperaban %zu.", joint.name.c_str(), joint.state_interfaces.size(), expected_state_interfaces.size());
       return hardware_interface::CallbackReturn::ERROR;
+    }
+    for (size_t i = 0; i < expected_state_interfaces.size(); ++i)
+    {
+      if (joint.state_interfaces[i].name != expected_state_interfaces[i])
+      {
+        RCLCPP_FATAL(get_logger(), "Joint '%s' state interface %zu es '%s'. Se esperaba '%s'.", joint.name.c_str(), i, joint.state_interfaces[i].name.c_str(), expected_state_interfaces[i].c_str());
+        return hardware_interface::CallbackReturn::ERROR;
+      }
     }
 
-    if (joint.state_interfaces[0].name != hardware_interface::HW_IF_VELOCITY)
-    {
-      RCLCPP_FATAL(
-        get_logger(), "Joint '%s' have '%s' as first state interface. '%s' expected.",
-        joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
-        hardware_interface::HW_IF_POSITION);
-      return hardware_interface::CallbackReturn::ERROR;
-    }
+    RCLCPP_INFO(get_logger(), "Joint '%s' tiene la estructura y el orden de interfaces correcto.", joint.name.c_str());
   }
+
+  // std::string joint_name = info_.joints[0].name;
+  // RCLCPP_INFO(get_logger(), "Joint name: %s", joint_name.c_str());
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -76,13 +88,20 @@ hardware_interface::CallbackReturn CurtisMotorHardwareInterface::on_init(
 hardware_interface::CallbackReturn CurtisMotorHardwareInterface::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // // Initialize CAN interface and Curtis driver
-  // can_interface_ = std::make_unique<SocketCANInterface>(can_interface_name_);
-  // curtis_driver_ = std::make_unique<CurtisMotorDriver>(verbose_);
-  
-  // RCLCPP_INFO(
-  //   rclcpp::get_logger("CurtisMotorHardwareInterface"),
-  //   "Configured Curtis Motor Hardware Interface with CAN interface: %s", can_interface_name_.c_str());
+  // Initialize CAN interface and Curtis driver
+  can_interface_ = std::make_unique<SocketCANInterface>(can_interface_name_);
+  curtis_driver_ = std::make_unique<CurtisMotorDriver>();
+
+  // reset values always when configuring hardware
+  for (const auto & [name, descr] : joint_state_interfaces_)
+  {
+    set_state(name, 0.0);
+    RCLCPP_INFO(get_logger(), "Reset state interface '%s' to 0.0", name.c_str());
+  }
+  for (const auto & [name, descr] : joint_command_interfaces_)
+  {
+    set_command(name, 0.0);
+  }
   
   return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -90,52 +109,24 @@ hardware_interface::CallbackReturn CurtisMotorHardwareInterface::on_configure(
 hardware_interface::CallbackReturn CurtisMotorHardwareInterface::on_cleanup(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // // Clean up resources
-  // if (can_interface_ && can_interface_->isInitialized()) {
-  //   can_interface_->close();
-  // }
   
-  // can_interface_.reset();
-  // curtis_driver_.reset();
-  
-  // RCLCPP_INFO(
-  //   rclcpp::get_logger("CurtisMotorHardwareInterface"),
-  //   "Cleaned up Curtis Motor Hardware Interface");
-  
+
+
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 hardware_interface::CallbackReturn CurtisMotorHardwareInterface::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // // Initialize CAN interface
-  // if (!can_interface_->init()) {
-  //   RCLCPP_ERROR(
-  //     rclcpp::get_logger("CurtisMotorHardwareInterface"),
-  //     "Failed to initialize CAN interface: %s", can_interface_name_.c_str());
-  //   return hardware_interface::CallbackReturn::ERROR;
-  // }
+  // Initialize CAN interface
+  if (!can_interface_->init()) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("CurtisMotorHardwareInterface"),
+      "Failed to initialize CAN interface: %s", can_interface_name_.c_str());
+    return hardware_interface::CallbackReturn::ERROR;
+  }
   
-  // // Register state and command interfaces
-  // for (const hardware_interface::ComponentInfo & joint : info_.joints)
-  // {
-  //   // State interfaces
-  //   state_interfaces.emplace_back(
-  //     joint.name, hardware_interface::HW_IF_POSITION, &hw_position_state_);
-  //   state_interfaces.emplace_back(
-  //     joint.name, hardware_interface::HW_IF_VELOCITY, &hw_velocity_state_);
-    
-  //   // Command interfaces
-  //   command_interfaces.emplace_back(
-  //     joint.name, hardware_interface::HW_IF_VELOCITY, &hw_velocity_command_);
-  // }
-  
-  // // Initialize timing
-  // last_control_update_time_ = std::chrono::steady_clock::now();
-  
-  // RCLCPP_INFO(
-  //   rclcpp::get_logger("CurtisMotorHardwareInterface"),
-  //   "Activated Curtis Motor Hardware Interface");
+
 
   // Enviamos un mensaje de reset al controlador y esperamos a que se inicialice
   curtis_driver_->create_0x226_frame(&throttle_frame_, 0, true);
@@ -179,13 +170,20 @@ hardware_interface::return_type CurtisMotorHardwareInterface::read(
     for(int i = 0; i < num_frames; ++i) {
       if (processed[i]) {
         if (frames[i].can_id == curtis_driver_->FRAME_227_) {
-
+          set_state(info_.joints[0].name + "/" + "motor_rpm", curtis_driver_->get_motor_rpm());
+          set_state(info_.joints[0].name + "/" + "velocity", curtis_driver_->get_speed());
         }
         else if (frames[i].can_id == curtis_driver_->FRAME_1A6_) {
-
+          set_state(info_.joints[0].name + "/" + "current_rms", curtis_driver_->get_current_rms());
+          set_state(info_.joints[0].name + "/" + "battery_current", curtis_driver_->get_battery_current());
+          set_state(info_.joints[0].name + "/" + "battery_voltage", curtis_driver_->get_keyswitch_voltage());
         }
         else if (frames[i].can_id == curtis_driver_->FRAME_2A6_) {
-        
+          set_state(info_.joints[0].name + "/" + "interlock", static_cast<double>(curtis_driver_->get_interlock()));
+          set_state(info_.joints[0].name + "/" + "on_fault", static_cast<double>(curtis_driver_->get_on_fault()));
+          set_state(info_.joints[0].name + "/" + "mode_auto", static_cast<double>(curtis_driver_->get_mode_auto()));
+          set_state(info_.joints[0].name + "/" + "mode_manual", static_cast<double>(curtis_driver_->get_mode_manual()));
+          set_state(info_.joints[0].name + "/" + "fault_code", static_cast<double>(curtis_driver_->get_fault_code()));
         }
       }
     }
@@ -207,4 +205,4 @@ hardware_interface::return_type CurtisMotorHardwareInterface::write(
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(curtis_motor_hardware::CurtisMotorHardwareInterface, hardware_interface::ActuatorInterface)
+PLUGINLIB_EXPORT_CLASS(caddy_ai2_ros2_control_hardware_curtis_motor_driver::CurtisMotorHardwareInterface, hardware_interface::ActuatorInterface)

@@ -1,7 +1,7 @@
 CMakeFiles/socket_can_interface.dir/src/socket_can_interface.cpp.o: \
- /home/racarla96/Documentos/ws_dev_ros2/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/src/socket_can_interface.cpp \
+ /home/racarla96/ws_dev/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/src/socket_can_interface.cpp \
  /usr/include/stdc-predef.h \
- /home/racarla96/Documentos/ws_dev_ros2/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/include/socket_can_interface.hpp \
+ /home/racarla96/ws_dev/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/include/socket_can_interface.hpp \
  /usr/include/c++/13/string /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \

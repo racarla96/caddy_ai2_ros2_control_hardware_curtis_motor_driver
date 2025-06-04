@@ -81,12 +81,12 @@ def generate_launch_description():
         parameters=[robot_description],
     )
 
-    # # Load robot state publisher
-    # joint_state_broadcaster_spawner = Node(
-    #     package="controller_manager",
-    #     executable="spawner",
-    #     arguments=["joint_state_broadcaster"],
-    # )
+    # Load robot state publisher
+    joint_state_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster"],
+    )
 
  
     # robot_controller_spawner = Node(
@@ -121,7 +121,7 @@ def generate_launch_description():
     nodes = [
         control_node,
         robot_state_pub_node,
-        # joint_state_broadcaster_spawner,
+        joint_state_broadcaster_spawner,
     ]
 
     return LaunchDescription(declared_arguments + nodes)

@@ -1,8 +1,8 @@
 #ifndef CURTIS_MOTOR_HARDWARE_INTERFACE_HPP_
 #define CURTIS_MOTOR_HARDWARE_INTERFACE_HPP_
 
-#include "curtis_motor_driver.hpp"
-#include "socket_can_interface.hpp"
+#include "caddy_ai2_ros2_control_hardware_curtis_motor_driver/curtis_motor_driver.hpp"
+#include "caddy_ai2_ros2_control_hardware_curtis_motor_driver/socket_can_interface.hpp"
 
 #include <memory>
 #include <string>
@@ -27,7 +27,7 @@
 #define RECOVER_TIME 5 // secs
 #define WATCHDOG_TIMEOUT 0.2 // secs
 
-namespace curtis_motor_hardware
+namespace caddy_ai2_ros2_control_hardware_curtis_motor_driver
 {
 class CurtisMotorHardwareInterface : public hardware_interface::ActuatorInterface
 {
@@ -69,6 +69,6 @@ private:
   std::unique_ptr<CurtisMotorDriver> curtis_driver_;
 };
 
-}  // namespace curtis_motor_hardware
+}  // namespace caddy_ai2_ros2_control_hardware_curtis_motor_driver
 
 #endif  // CURTIS_MOTOR_HARDWARE_INTERFACE_HPP_

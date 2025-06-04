@@ -1,4 +1,4 @@
-#include "curtis_motor_driver.hpp"
+#include "caddy_ai2_ros2_control_hardware_curtis_motor_driver/curtis_motor_driver.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -174,19 +174,19 @@ bool CurtisMotorDriver::process_0x1A6_frame(const struct can_frame& frame) {
     if (frame.len == 8) {
         // Unpack Current (RMS)
         int16_t current_rms_raw = (frame.data[1] << 8) | frame.data[0];
-        current_rms_ = static_cast<float>(current_rms_raw) * 0.1f;
+        current_rms_ = static_cast<double>(current_rms_raw) * 0.1f;
 
         // Unpack Battery Current
         int16_t battery_current_raw = (frame.data[3] << 8) | frame.data[2];
-        battery_current_ = static_cast<float>(battery_current_raw) * 0.1f;
+        battery_current_ = static_cast<double>(battery_current_raw) * 0.1f;
 
         // Unpack Keyswitch Voltage
         int16_t keyswitch_voltage_raw = (frame.data[5] << 8) | frame.data[4];
-        keyswitch_voltage_ = static_cast<float>(keyswitch_voltage_raw) * 0.01f;
+        keyswitch_voltage_ = static_cast<double>(keyswitch_voltage_raw) * 0.01f;
 
         // Unpack BDI Percentage
         int16_t bdi_percentage_raw = (frame.data[7] << 8) | frame.data[6];
-        bdi_percentage_ = static_cast<float>(bdi_percentage_raw);
+        bdi_percentage_ = static_cast<double>(bdi_percentage_raw);
 
         // Update the timestamp
         last_update_0x1A6_frame_++;
@@ -229,19 +229,19 @@ bool CurtisMotorDriver::process_0x2A6_frame(const struct can_frame& frame) {
         // Extract Motor RPM
         // #TODO: Check the sign of the RPM value, maybe we need to change the sign.
         int16_t motor_rpm_raw = (frame.data[1] << 8) | frame.data[0];
-        motor_rpm_ =  static_cast<float>(std::abs(motor_rpm_raw));
+        motor_rpm_ =  static_cast<double>(std::abs(motor_rpm_raw));
 
         // Extract Vehicle Speed
         int16_t speed_raw = (frame.data[3] << 8) | frame.data[2];
-        speed_ = (static_cast<float>(speed_raw) / CURTIS_SPEED_DIVISOR) * KMH_TO_MPS;
+        speed_ = (static_cast<double>(speed_raw) / CURTIS_SPEED_DIVISOR) * KMH_TO_MPS;
 
         // Extract Master Controller Temperature
         int16_t controller_temp_raw = (frame.data[5] << 8) | frame.data[4];
-        controller_temp_ = static_cast<float>(controller_temp_raw) * 0.1f;
+        controller_temp_ = static_cast<double>(controller_temp_raw) * 0.1f;
 
         // Extract Master Motor Temperature
         int16_t motor_temp_raw = (frame.data[7] << 8) | frame.data[6];
-        motor_temp_ = static_cast<float>(motor_temp_raw) * 0.1f;
+        motor_temp_ = static_cast<double>(motor_temp_raw) * 0.1f;
 
         // Update the timestamp
         last_update_0x2A6_frame_++;

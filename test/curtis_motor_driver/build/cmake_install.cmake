@@ -1,4 +1,4 @@
-# Install script for directory: /home/racarla96/Documentos/ws_dev_ros2/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver
+# Install script for directory: /home/racarla96/ws_dev/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/racarla96/Documentos/ws_dev_ros2/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/racarla96/ws_dev/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -53,7 +53,7 @@ public:
 
     // Getters for motor data
     int16_t get_raw_desired_throttle() const { return raw_desired_throttle_; }
-    float get_desired_throttle() const { return desired_throttle_; }
+    double get_desired_throttle() const { return desired_throttle_; }
 
     bool get_interlock() const { return interlock_; }
     bool get_on_fault() const { return on_fault_; }
@@ -62,15 +62,15 @@ public:
     int32_t get_fault_code() const { return fault_code_; }
     std::string get_fault_description() const { return fault_description_; }
 
-    float get_current_rms() const { return current_rms_; }
-    float get_battery_current() const { return battery_current_; }
-    float get_keyswitch_voltage() const { return keyswitch_voltage_; }
-    float get_bdi_percentage() const { return bdi_percentage_; }
+    double get_current_rms() const { return current_rms_; }
+    double get_battery_current() const { return battery_current_; }
+    double get_keyswitch_voltage() const { return keyswitch_voltage_; }
+    double get_bdi_percentage() const { return bdi_percentage_; }
 
-    float get_motor_rpm() const { return motor_rpm_; }
-    float get_speed() const { return speed_; }
-    float get_controller_temp() const { return controller_temp_; }
-    float get_motor_temp() const { return motor_temp_; }
+    double get_motor_rpm() const { return motor_rpm_; }
+    double get_speed() const { return speed_; }
+    double get_controller_temp() const { return controller_temp_; }
+    double get_motor_temp() const { return motor_temp_; }
 
     std::string getFaultString(uint8_t fault_code);
     
@@ -92,11 +92,11 @@ private:
     bool process_0x2A6_frame(const struct can_frame& frame);
     // bool process_0x726_frame(const struct can_frame& frame);
 
-    // Info from frame 0x227
+    // Info from frame 0x226
     int16_t raw_desired_throttle_ = 0;  // Raw desired throttle value (-32767 to 32767)
-    float desired_throttle_ = 0.0f;     // Desired throttle percentage (-100% to 100%)
+    double desired_throttle_ = 0.0f;     // Desired throttle percentage (-100% to 100%)
 
-    // Info from frame 0x227
+    // Info from frame 0x226
     bool interlock_ = false;            // Interlock state
     bool on_fault_ = false;             // Fault state
     bool mode_auto_ = false;            // Automatic mode
@@ -105,16 +105,16 @@ private:
     std::string fault_description_ = ""; // Fault description
     
     // Info from frame 0x1A6
-    float current_rms_ = 0.0f;          // Amps
-    float battery_current_ = 0.0f;      // Amps
-    float keyswitch_voltage_ = 0.0f;    // Volts
-    float bdi_percentage_ = 0.0f;       // Percentage
+    double current_rms_ = 0.0f;          // Amps
+    double battery_current_ = 0.0f;      // Amps
+    double keyswitch_voltage_ = 0.0f;    // Volts
+    double bdi_percentage_ = 0.0f;       // Percentage
 
     // Info from frame 0x2A6
-    float motor_rpm_ = 0.0f;        // RPM
-    float speed_ = 0.0f;            // km/h
-    float controller_temp_ = 0.0f;  // Celsius
-    float motor_temp_ = 0.0f;       // Celsius
+    double motor_rpm_ = 0.0f;        // RPM
+    double speed_ = 0.0f;            // m/s
+    double controller_temp_ = 0.0f;  // Celsius
+    double motor_temp_ = 0.0f;       // Celsius
     
     // Incremental counter to see the last data update
     uint64_t last_update_0x226_frame_ = 0;

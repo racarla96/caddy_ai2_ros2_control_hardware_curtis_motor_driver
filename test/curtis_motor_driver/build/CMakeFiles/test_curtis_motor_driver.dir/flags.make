@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/racarla96/Documentos/ws_dev_ros2/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/include
+CXX_INCLUDES = -I/home/racarla96/ws_dev/src/caddy_ai2_ros2_control_hardware_curtis_motor_driver/test/curtis_motor_driver/include
 
 CXX_FLAGS = -std=gnu++14
 
